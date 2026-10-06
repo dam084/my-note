@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 단어장 - 간호학 의학용어 암기</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Pretendard / Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        },
+                        whale: {
+                            light: '#eef2ff',
+                            DEFAULT: '#6366f1',
+                            dark: '#4f46e5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between max-w-md mx-auto relative shadow-2xl overflow-x-hidden border-x border-slate-200">
+
+    <header class="bg-white sticky top-0 z-40 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <div class="w-9 h-9 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                <i class="fa-solid fa-whale text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-slate-900 leading-tight" id="header-title">나만의 단어장</h1>
+                <p class="text-xs text-slate-400">간호학 의학용어 스마트 암기</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="openDownloadModal()" class="text-slate-500 hover:text-indigo-600 bg-slate-100 p-2 rounded-xl transition text-sm" title="데이터 백업/다운로드">
+                <i class="fa-solid fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-content" class="flex-1 pb-24 overflow-y-auto">
+        <!-- Views will be dynamically injected here -->
+    </main>
+
+    <div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">알림 메시지</span>
+    </div>
+
+    <div id="download-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-file-arrow-down text-indigo-500 mr-2"></i>단어장 내보내기</h3>
+                <button onclick="closeDownloadModal()" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-5 leading-relaxed">등록된 모든 의학용어와 책갈피 데이터를 HTML 또는 JSON 파일로 다운로드하여 영구 보관하거나 다른 기기에 옮길 수 있습니다.</p>
+            <div class="space-y-3">
+                <button onclick="downloadHtmlFile()" class="w-full py-3 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-2xl text-sm flex items-center justify-center space-x-2 transition">
+                    <i class="fa-solid fa-code"></i>
+                    <span>현재 웹앱 HTML 파일 다운로드</span>
+                </button>
+                <button onclick="downloadJsonData()" class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-2xl text-sm flex items-center justify-center space-x-2 transition">
+                    <i class="fa-solid fa-database"></i>
+                    <span>단어장 데이터 백업 (JSON)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bg-white/90 backdrop-blur-md border-t border-slate-100 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 px-4 py-2 flex justify-around items-center">
+        <button onclick="switchTab('home')" id="tab-home" class="flex flex-col items-center py-1 px-3 text-indigo-600 transition">
+            <i class="fa-solid fa-house text-lg mb-0.5"></i>
+            <span class="text-[10px] font-semibold">홈</span>
+        </button>
+        <button onclick="switchTab('vocab')" id="tab-vocab" class="flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 transition">
+            <i class="fa-solid fa-book-open text-lg mb-0.5"></i>
+            <span class="text-[10px] font-medium">단어장</span>
+        </button>
+        <button onclick="switchTab('add')" id="tab-add" class="flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 transition">
+            <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center -mt-3 shadow-lg shadow-indigo-300">
+                <i class="fa-solid fa-plus text-base"></i>
+            </div>
+            <span class="text-[10px] font-medium mt-0.5">단어등록</span>
+        </button>
+        <button onclick="switchTab('bookmarks')" id="tab-bookmarks" class="flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 transition">
+            <i class="fa-solid fa-bookmark text-lg mb-0.5"></i>
+            <span class="text-[10px] font-medium">책갈피</span>
+        </button>
+    </nav>
+
+    <script>
+        // Default Sample Nursing Medical Terms
+        const defaultWords = [
+            {
+                id: 1,
+                term: "Myocardial Infarction",
+                korean: "심근경색 (MI)",
+                category: "순환기계",
+                definition: "관상동맥의 폐쇄로 인해 심장 근육으로 혈류가 차단되어 괴사가 일어나는 질환. 흉통, 호흡곤란 유발.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-heart-pulse"
+            },
+            {
+                id: 2,
+                term: "Hypertension",
+                korean: "고혈압 (HTN)",
+                category: "순환기계",
+                definition: "성인 기준 수축기 혈압이 140mmHg 이상이거나 이완기 혈압이 90mmHg 이상인 상태.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-gauge-high"
+            },
+            {
+                id: 3,
+                term: "Dyspnea",
+                korean: "호흡곤란",
+                category: "호흡기계",
+                definition: "숨쉬기가 불편하거나 고통스럽고 주관적으로 숨이 차다고 느끼는 상태.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-lungs"
+            },
+            {
+                id: 4,
+                term: "Pneumonia",
+                korean: "폐렴",
+                category: "호흡기계",
+                definition: "폐의 허파꽈리와 간질 조직에 생기는 염증. 기침, 가래, 발열 및 호흡기 증상 동반.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-virus"
+            },
+            {
+                id: 5,
+                term: "Cerebrovascular Accident",
+                korean: "뇌졸중 / 뇌혈관사고 (CVA)",
+                category: "신여기계",
+                definition: "뇌에 혈액을 공급하는 혈관이 막히거나 터져서 뇌 손상이 오고 편마비 등이 발생하는 응급 질환.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-brain"
+            },
+            {
+                id: 6,
+                term: "Intravenous",
+                korean: "정맥 내 (IV)",
+                category: "기본간호",
+                definition: "약물이나 수액을 정맥 혈관 안으로 직접 주입하는 투약 경로.",
+                date: new Date().toISOString().split('T')[0],
+                icon: "fa-syringe"
+            }
+        ];
+
+        const defaultBookmarks = ["순환기계", "호흡기계", "신여기계", "기본간호", "응급의학", "약어모음"];
+
+        // State Management
+        let words = JSON.parse(localStorage.getItem('nursing_words')) || defaultWords;
+        let bookmarks = JSON.parse(localStorage.getItem('nursing_bookmarks')) || defaultBookmarks;
+        let currentTab = 'home';
+
+        // Flashcard state
+        let currentCardIndex = 0;
+        let flashcardList = [];
+        let isFlipped = false;
+        let selectedFilterCategory = '전체';
+        let currentSortOrder = 'default';
+
+        function saveToLocalStorage() {
+            localStorage.setItem('nursing_words', JSON.stringify(words));
+            localStorage.setItem('nursing_bookmarks', JSON.stringify(bookmarks));
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        // Tab Switcher
+        function switchTab(tab) {
+            currentTab = tab;
+            // Update active states on nav
+            ['home', 'vocab', 'add', 'bookmarks'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    if (t === 'add') {
+                        el.children[1].className = "text-[10px] font-bold text-indigo-600 mt-0.5";
+                    } else {
+                        el.className = "flex flex-col items-center py-1 px-3 text-indigo-600 transition";
+                        el.querySelector('span').className = "text-[10px] font-bold";
+                    }
+                } else {
+                    if (t === 'add') {
+                        el.children[1].className = "text-[10px] font-medium text-slate-400 mt-0.5";
+                    } else {
+                        el.className = "flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 transition";
+                        el.querySelector('span').className = "text-[10px] font-medium";
+                    }
+                }
+            });
+
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            const container = document.getElementById('app-content');
+            const headerTitle = document.getElementById('header-title');
+
+            if (currentTab === 'home') {
+                headerTitle.innerText = "나만의 단어장";
+                container.innerHTML = renderHomeView();
+            } else if (currentTab === 'vocab') {
+                headerTitle.innerText = "의학용어 암기장";
+                container.innerHTML = renderVocabView();
+                initFlashcardList();
+            } else if (currentTab === 'add') {
+                headerTitle.innerText = "새 단어 등록";
+                container.innerHTML = renderAddView();
+            } else if (currentTab === 'bookmarks') {
+                headerTitle.innerText = "책갈피 관리";
+                container.innerHTML = renderBookmarksView();
+            }
+        }
+
+        function renderHomeView() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayCount = words.filter(w => w.date === today).length;
+            const totalCount = words.length;
+            const bookmarkCount = bookmarks.length;
+            const recentWords = [...words].reverse().slice(0, 3);
+
+            return `
+                <div class="p-5 space-y-6">
+                    <!-- Welcome Banner (Amkigorae Whale Vibe) -->
+                    <div class="bg-gradient-to-br from-indigo-500 to-brand-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
+                        <div class="absolute -right-6 -bottom-6 opacity-15 text-9xl">
+                            <i class="fa-solid fa-whale"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <span class="inline-block bg-white/20 text-xs px-3 py-1 rounded-full font-medium mb-3 backdrop-blur-sm">
+                                <i class="fa-solid fa-graduation-cap mr-1"></i> 예비 간호사 필수 암기
+                            </span>
+                            <h2 class="text-xl font-bold mb-1">오늘도 짬짬이 의학용어 정복! 🐳</h2>
+                            <p class="text-xs text-indigo-100 mb-5 leading-relaxed">버스나 실습 쉬는 시간에 플래시카드로 간편하게 외워보세요.</p>
+                            <div class="flex space-x-3">
+                                <button onclick="switchTab('vocab')" class="bg-white text-indigo-600 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-md hover:bg-indigo-50 transition flex items-center space-x-2">
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>학습 시작하기</span>
+                                </button>
+                                <button onclick="switchTab('add')" class="bg-indigo-700/50 hover:bg-indigo-700/70 text-white px-4 py-2.5 rounded-2xl font-semibold text-xs backdrop-blur-sm transition flex items-center space-x-2">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>단어 추가</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Stats -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mx-auto mb-2 text-sm">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                            <div class="text-xs text-slate-400 font-medium mb-0.5">전체 단어</div>
+                            <div class="text-lg font-bold text-slate-800">${totalCount}개</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center mx-auto mb-2 text-sm">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </div>
+                            <div class="text-xs text-slate-400 font-medium mb-0.5">책갈피 분류</div>
+                            <div class="text-lg font-bold text-slate-800">${bookmarkCount}개</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-2 text-sm">
+                                <i class="fa-solid fa-calendar-day"></i>
+                            </div>
+                            <div class="text-xs text-slate-400 font-medium mb-0.5">오늘 등록</div>
+                            <div class="text-lg font-bold text-slate-800">${todayCount}개</div>
+                        </div>
+                    </div>
+
+                    <!-- Bookmarks Quick List -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                                <i class="fa-solid fa-layer-group text-indigo-500 mr-2"></i>책갈피별 모아보기
+                            </h3>
+                            <button onclick="switchTab('bookmarks')" class="text-xs text-indigo-600 font-semibold hover:underline">전체 관리</button>
+                        </div>
+                        <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-none">
+                            <button onclick="selectCategoryAndGoVocab('전체')" class="flex-shrink-0 bg-indigo-600 text-white px-4 py-2 rounded-2xl text-xs font-semibold shadow-sm">
+                                전체 (${words.length})
+                            </button>
+                            ${bookmarks.map(b => {
+                                const cnt = words.filter(w => w.category === b).length;
+                                return `
+                                    <button onclick="selectCategoryAndGoVocab('${b}')" class="flex-shrink-0 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-2xl text-xs font-medium transition shadow-sm">
+                                        ${b} (${cnt})
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Recent Words List -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                                <i class="fa-solid fa-clock-rotate-left text-indigo-500 mr-2"></i>최근 등록한 용어
+                            </h3>
+                            <button onclick="switchTab('vocab')" class="text-xs text-indigo-600 font-semibold hover:underline">전체보기</button>
+                        </div>
+                        <div class="space-y-2">
+                            ${recentWords.length === 0 ? `
+                                <div class="bg-white p-6 rounded-2xl text-center border border-slate-100 text-slate-400 text-xs">
+                                    등록된 단어가 없습니다. 새 단어를 추가해보세요!
+                                </div>
+                            ` : recentWords.map(w => `
+                                <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                                            <i class="fa-solid ${w.icon || 'fa-stethoscope'}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-900 text-sm">${w.term}</div>
+                                            <div class="text-xs text-slate-500">${w.korean} <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full ml-1 text-slate-600">${w.category}</span></div>
+                                        </div>
+                                    </div>
+                                    <button onclick="deleteWord(${w.id})" class="text-slate-300 hover:text-red-500 p-2 text-xs" title="삭제">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderVocabView() {
+            return `
+                <div class="p-5 space-y-4">
+                    <!-- Filter and Sort Bar -->
+                    <div class="flex flex-col space-y-2">
+                        <div class="flex justify-between items-center">
+                            <select id="vocab-category-select" onchange="filterVocabCategory(this.value)" class="bg-white border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="전체">모든 책갈피 (${words.length})</option>
+                                ${bookmarks.map(b => `<option value="${b}" ${selectedFilterCategory === b ? 'selected' : ''}>${b} (${words.filter(w => w.category === b).length})</option>`).join('')}
+                            </select>
+                            <div class="flex space-x-1">
+                                <button onclick="sortVocab('default')" id="sort-default-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-medium ${currentSortOrder === 'default' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}">책갈피순</button>
+                                <button onclick="sortVocab('date')" id="sort-date-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-medium ${currentSortOrder === 'date' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}">등록일순</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TTS & Action Toolbar -->
+                    <div class="flex justify-between items-center bg-indigo-50 px-4 py-2.5 rounded-2xl border border-indigo-100">
+                        <div class="flex items-center space-x-2 text-indigo-700 text-xs font-semibold">
+                            <i class="fa-solid fa-volume-high"></i>
+                            <span id="tts-status">영어 발음 청취 가능</span>
+                        </div>
+                        <button onclick="playCurrentTTS()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1">
+                            <i class="fa-solid fa-play"></i>
+                            <span>발음 듣기 (TTS)</span>
+                        </button>
+                    </div>
+
+                    <!-- Flashcard Container -->
+                    <div id="flashcard-container" class="relative w-full h-80 perspective-1000 cursor-pointer select-none" onclick="flipCard()">
+                        <!-- Card Element -->
+                        <div id="flashcard-inner" class="w-full h-full relative transform-style-3d transition-transform duration-500 rounded-3xl shadow-xl">
+                            <!-- Front of Card (English + Illustration/Icon) -->
+                            <div class="absolute inset-0 bg-white rounded-3xl border border-slate-100 p-6 flex flex-col justify-between backface-hidden">
+                                <div class="flex justify-between items-center">
+                                    <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full" id="card-badge">순환기계</span>
+                                    <span class="text-xs text-slate-400 font-medium" id="card-counter">1 / 5</span>
+                                </div>
+                                <div class="text-center my-auto space-y-4">
+                                    <div class="w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-4xl mx-auto shadow-inner">
+                                        <i id="card-icon" class="fa-solid fa-heart-pulse"></i>
+                                    </div>
+                                    <div>
+                                        <h2 id="card-term" class="text-2xl font-bold text-slate-900 tracking-tight">Myocardial Infarction</h2>
+                                        <p class="text-xs text-slate-400 mt-2"><i class="fa-solid fa-hand-pointer mr-1"></i> 카드를 터치하여 한글 뜻 확인</p>
+                                    </div>
+                                </div>
+                                <div class="text-center text-[10px] text-slate-300">
+                                    나만의 단어장 • Nursing Flashcard
+                                </div>
+                            </div>
+
+                            <!-- Back of Card (Korean Meaning & Definition) -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180">
+                                <div class="flex justify-between items-center">
+                                    <span class="bg-white/20 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full" id="card-back-badge">순환기계</span>
+                                    <span class="text-xs text-indigo-300 font-medium">정답 및 설명</span>
+                                </div>
+                                <div class="text-center my-auto space-y-3">
+                                    <h3 id="card-korean" class="text-xl font-bold text-amber-300">심근경색 (MI)</h3>
+                                    <p id="card-definition" class="text-xs text-slate-200 leading-relaxed bg-white/10 p-3.5 rounded-2xl backdrop-blur-sm">
+                                        관상동맥의 폐쇄로 인해 심장 근육으로 혈류가 차단되어 괴사가 일어나는 질환.
+                                    </p>
+                                </div>
+                                <div class="text-center text-[10px] text-indigo-300/50">
+                                    다시 터치하면 영어 단어로 돌아갑니다
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Navigation Controls -->
+                    <div class="flex items-center justify-between pt-2">
+                        <button onclick="prevCard()" class="flex-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 py-3.5 rounded-2xl font-bold text-xs shadow-sm transition flex items-center justify-center space-x-2 mr-2">
+                            <i class="fa-solid fa-chevron-left"></i>
+                            <span>이전 단어</span>
+                        </button>
+                        <button onclick="nextCard()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-bold text-xs shadow-md transition flex items-center justify-center space-x-2 ml-2">
+                            <span>다음 단어</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initFlashcardList() {
+            if (selectedFilterCategory === '전체') {
+                flashcardList = [...words];
+            } else {
+                flashcardList = words.filter(w => w.category === selectedFilterCategory);
+            }
+
+            if (currentSortOrder === 'date') {
+                flashcardList.sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
+
+            currentCardIndex = 0;
+            isFlipped = false;
+            updateFlashcardUI();
+        }
+
+        function filterVocabCategory(cat) {
+            selectedFilterCategory = cat;
+            initFlashcardList();
+        }
+
+        function sortVocab(order) {
+            currentSortOrder = order;
+            if (order === 'default') {
+                document.getElementById('sort-default-btn').className = "px-2.5 py-1.5 rounded-xl text-xs font-medium bg-indigo-600 text-white";
+                document.getElementById('sort-date-btn').className = "px-2.5 py-1.5 rounded-xl text-xs font-medium bg-white text-slate-600 border border-slate-200";
+            } else {
+                document.getElementById('sort-date-btn').className = "px-2.5 py-1.5 rounded-xl text-xs font-medium bg-indigo-600 text-white";
+                document.getElementById('sort-default-btn').className = "px-2.5 py-1.5 rounded-xl text-xs font-medium bg-white text-slate-600 border border-slate-200";
+            }
+            initFlashcardList();
+        }
+
+        function updateFlashcardUI() {
+            if (flashcardList.length === 0) {
+                document.getElementById('flashcard-container').innerHTML = `
+                    <div class="w-full h-full bg-white rounded-3xl border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mb-3">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm mb-1">해당 분류에 단어가 없습니다</h3>
+                        <p class="text-xs text-slate-400 mb-4">새로운 의학용어를 등록하거나 다른 책갈피를 선택하세요.</p>
+                        <button onclick="switchTab('add')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold">단어 등록하러 가기</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = flashcardList[currentCardIndex];
+            document.getElementById('card-badge').innerText = item.category;
+            document.getElementById('card-back-badge').innerText = item.category;
+            document.getElementById('card-counter').innerText = `${currentCardIndex + 1} / ${flashcardList.length}`;
+            document.getElementById('card-term').innerText = item.term;
+            document.getElementById('card-korean').innerText = item.korean;
+            document.getElementById('card-definition').innerText = item.definition;
+            document.getElementById('card-icon').className = `fa-solid ${item.icon || 'fa-stethoscope'}`;
+
+            if (isFlipped) {
+                document.getElementById('flashcard-inner').classList.add('rotate-y-180');
+            } else {
+                document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+            }
+        }
+
+        function flipCard() {
+            if (flashcardList.length === 0) return;
+            isFlipped = !isFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (isFlipped) {
+                inner.classList.add('rotate-y-180');
+            } else {
+                inner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            if (flashcardList.length === 0) return;
+            isFlipped = false;
+            currentCardIndex = (currentCardIndex + 1) % flashcardList.length;
+            updateFlashcardUI();
+        }
+
+        function prevCard() {
+            if (flashcardList.length === 0) return;
+            isFlipped = false;
+            currentCardIndex = (currentCardIndex - 1 + flashcardList.length) % flashcardList.length;
+            updateFlashcardUI();
+        }
+
+        function playCurrentTTS() {
+            if (flashcardList.length === 0) return;
+            const item = flashcardList[currentCardIndex];
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(item.term);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+                showToast(`"${item.term}" 발음 재생중...`);
+            } else {
+                showToast('브라우저가 음성 재생을 지원하지 않습니다.');
+            }
+        }
+
+        function selectCategoryAndGoVocab(cat) {
+            selectedFilterCategory = cat;
+            switchTab('vocab');
+        }
+
+        function renderAddView() {
+            const today = new Date().toISOString().split('T')[0];
+            return `
+                <div class="p-5 space-y-5">
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-md">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm">새로운 의학용어 기록</h3>
+                            <p class="text-xs text-slate-500">실습이나 강의 중 헷갈렸던 용어를 기록하고 암기하세요.</p>
+                        </div>
+                    </div>
+
+                    <form onsubmit="handleWordSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">책갈피 (분류 선택)</label>
+                            <select id="add-category" class="w-full bg-white border border-slate-200 rounded-2xl p-3.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                                ${bookmarks.map(b => `<option value="${b}">${b}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">영어 의학용어 (Term)</label>
+                            <input type="text" id="add-term" required placeholder="예: Myocardial Infarction" class="w-full bg-white border border-slate-200 rounded-2xl p-3.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">한글 뜻 및 명칭</label>
+                            <input type="text" id="add-korean" required placeholder="예: 심근경색 (MI)" class="w-full bg-white border border-slate-200 rounded-2xl p-3.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">상세 설명 및 간호 포인트</label>
+                            <textarea id="add-definition" rows="3" required placeholder="질환의 정의, 증상, 간호중재 등을 간단히 적어보세요..." class="w-full bg-white border border-slate-200 rounded-2xl p-3.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">아이콘 / 삽화 선택</label>
+                            <div class="grid grid-cols-6 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-heart-pulse" checked class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-heart-pulse"></i>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-lungs" class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-lungs"></i>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-brain" class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-brain"></i>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-syringe" class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-syringe"></i>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-pills" class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-pills"></i>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="add-icon" value="fa-hospital" class="peer sr-only">
+                                    <div class="w-full h-12 rounded-2xl bg-white border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <i class="fa-solid fa-hospital"></i>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">등록일</label>
+                            <input type="date" id="add-date" value="${today}" class="w-full bg-white border border-slate-200 rounded-2xl p-3.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 transition flex items-center justify-center space-x-2 text-sm mt-2">
+                            <i class="fa-solid fa-check"></i>
+                            <span>단어장 저장하기</span>
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        function handleWordSubmit(event) {
+            event.preventDefault();
+            const category = document.getElementById('add-category').value;
+            const term = document.getElementById('add-term').value.trim();
+            const korean = document.getElementById('add-korean').value.trim();
+            const definition = document.getElementById('add-definition').value.trim();
+            const date = document.getElementById('add-date').value;
+            const iconEl = document.querySelector('input[name="add-icon"]:checked');
+            const icon = iconEl ? iconEl.value : 'fa-stethoscope';
+
+            const newWord = {
+                id: Date.now(),
+                term,
+                korean,
+                category,
+                definition,
+                date,
+                icon
+            };
+
+            words.push(newWord);
+            saveToLocalStorage();
+            showToast('새 단어가 성공적으로 등록되었습니다! 🎉');
+            switchTab('home');
+        }
+
+        function renderBookmarksView() {
+            return `
+                <div class="p-5 space-y-5">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-slate-900 text-sm mb-2"><i class="fa-solid fa-circle-plus text-indigo-500 mr-2"></i>새 책갈피(분류) 추가</h3>
+                        <div class="flex space-x-2">
+                            <input type="text" id="new-bookmark-input" placeholder="예: 응급간호, 아동간호 등..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button onclick="addBookmark()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">추가</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center">
+                            <i class="fa-solid fa-bookmark text-indigo-500 mr-2"></i>등록된 책갈피 목록 (${bookmarks.length})
+                        </h3>
+                        <div class="space-y-2.5">
+                            ${bookmarks.map((b, index) => {
+                                const count = words.filter(w => w.category === b).length;
+                                return `
+                                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
+                                                ${index + 1}
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-slate-900 text-sm">${b}</div>
+                                                <div class="text-xs text-slate-400">등록된 단어: <span class="text-indigo-600 font-semibold">${count}개</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="selectCategoryAndGoVocab('${b}')" class="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-medium transition">보기</button>
+                                            <button onclick="deleteBookmark('${b}')" class="text-slate-300 hover:text-red-500 p-2 text-xs" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addBookmark() {
+            const input = document.getElementById('new-bookmark-input');
+            const val = input.value.trim();
+            if (!val) {
+                showToast('책갈피 이름을 입력해주세요.');
+                return;
+            }
+            if (bookmarks.includes(val)) {
+                showToast('이미 존재하는 책갈피입니다.');
+                return;
+            }
+            bookmarks.push(val);
+            saveToLocalStorage();
+            showToast(`"${val}" 책갈피가 추가되었습니다.`);
+            renderCurrentView();
+        }
+
+        function deleteBookmark(cat) {
+            if (bookmarks.length <= 1) {
+                showToast('최소 1개 이상의 책갈피가 필요합니다.');
+                return;
+            }
+            if (confirm(`"${cat}" 책갈피를 삭제하시겠습니까? (속한 단어들은 미분류 또는 기본 분류로 남습니다)`)) {
+                bookmarks = bookmarks.filter(b => b !== cat);
+                saveToLocalStorage();
+                showToast('책갈피가 삭제되었습니다.');
+                renderCurrentView();
+            }
+        }
+
+        function deleteWord(id) {
+            if (confirm('이 단어를 삭제하시겠습니까?')) {
+                words = words.filter(w => w.id !== id);
+                saveToLocalStorage();
+                showToast('단어가 삭제되었습니다.');
+                renderCurrentView();
+            }
+        }
+
+        // Modal Controls
+        function openDownloadModal() {
+            document.getElementById('download-modal').classList.remove('hidden');
+        }
+
+        function closeDownloadModal() {
+            document.getElementById('download-modal').classList.add('hidden');
+        }
+
+        function downloadHtmlFile() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '나만의_의학용어_단어장.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('웹앱 HTML 파일이 다운로드되었습니다!');
+            closeDownloadModal();
+        }
+
+        function downloadJsonData() {
+            const data = { words, bookmarks };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nursing_vocab_backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('데이터 백업 파일이 다운로드되었습니다!');
+            closeDownloadModal();
+        }
+
+        // Initialize app on load
+        window.onload = function() {
+            renderCurrentView();
+        }
+    </script>
+</body>
+</html>
